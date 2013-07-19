@@ -10,8 +10,8 @@ import java.io.BufferedReader;
 public class ParkingTicketsStats {
 	
     static final Pattern number = Pattern.compile("^[\\d\\-+%/!]+ ?");
-    static final Pattern suffix = Pattern.compile(" (S(TREE)?T)?(AVE?)?(RD)?(BLVD)?(COURT)?(CR?T)?$");
-    static final Pattern direction = Pattern.compile(" [NSEW]([EA]ST)?$");
+    static final Pattern suffix = Pattern.compile(" (?:ST|STREET|AVE?|RD|BLVD|COURT|CR?T)$");
+    static final Pattern direction = Pattern.compile(" [NSEW](?:[EA]ST)?$");
 
     public static HackMap sortStreetsByProfitability(InputStream parkingTicketStream) throws Exception{
       HackMap streetProfitability = new HackMap();
@@ -30,7 +30,7 @@ public class ParkingTicketsStats {
     return streetProfitability;
       }
     }
-    
+        
     private static String extractStreetName(String address) {
     	String street = number.matcher(address).replaceFirst("");
     	String streetName = direction.matcher(street).replaceFirst("");
