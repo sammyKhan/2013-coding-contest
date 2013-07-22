@@ -2,12 +2,12 @@ package ca.kijiji.contest;
 
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 
-public class HackMap extends HashMap<String, Integer> implements SortedMap<String, Integer>{
+public class HackMap extends ConcurrentHashMap<String, Integer> implements SortedMap<String, Integer>{
    
 	private Integer highestValue;
 	private String keyOfHighestValue;
@@ -17,7 +17,7 @@ public class HackMap extends HashMap<String, Integer> implements SortedMap<Strin
 		highestValue = 0;
 	}
 	
-	public void addToValue(String key, Integer value) {
+	public synchronized void addToValue(String key, Integer value) {
 		Integer previousValue = this.get(key);
 		if (previousValue == null) {
 			this.put(key, value);
@@ -26,7 +26,7 @@ public class HackMap extends HashMap<String, Integer> implements SortedMap<Strin
 		}
 	}
 	
-	public Integer put(String key, Integer value) {
+	public synchronized Integer put(String key, Integer value) {
 		super.put(key, value);
 		if (value.compareTo(highestValue) > 0) {
 			highestValue = value;

@@ -4,6 +4,9 @@ import java.io.FileWriter;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.SortedMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.io.BufferedReader;
 
@@ -12,30 +15,44 @@ public class ParkingTicketsStats {
     static final Pattern number = Pattern.compile("^[\\d\\-+%/!]+ ?");
     static final Pattern suffix = Pattern.compile(" (?:ST|STREET|AVE?|RD|BLVD|COURT|CR?T)$");
     static final Pattern direction = Pattern.compile(" [NSEW](?:[EA]ST)?$");
+    
+    private static final HackMap streets = new HackMap();
 
     public static HackMap sortStreetsByProfitability(InputStream parkingTicketStream) throws Exception{
-      HackMap streetProfitability = new HackMap();
+      ExecutorService executor = Executors.newFixedThreadPool(3);
+      class TicketParser implements Runnable {
+    	  
+    	  private final String ticket;
+    	  
+    	  public TicketParser(String ticket) {
+    		  this.ticket = ticket;
+    	  }
+
+    		@Override
+    		public void run() {
+    	        String[] ticketFields = ticket.split(",");
+    	        int price = Integer.parseInt(ticketFields[4]);
+    	        String address = ticketFields[7];
+    	    	String street = number.matcher(address).replaceFirst("");
+    	    	String streetName = direction.matcher(street).replaceFirst("");
+    	    	String finalName = suffix.matcher(streetName).replaceFirst("");
+    	        streets.addToValue(finalName, price);
+    		}
+    	}
       try ( BufferedReader ticketReader =
          new BufferedReader(new InputStreamReader(parkingTicketStream));
       ) {    		 		 
       String ticket = ticketReader.readLine();
       ticket = ticketReader.readLine();
       while (ticket != null) {
-        String[] ticketFields = ticket.split(",");
-        int price = Integer.parseInt(ticketFields[4]);
-        String name = extractStreetName(ticketFields[7]);
-        streetProfitability.addToValue(name, price);
+    	executor.execute(new TicketParser(ticket));
     	ticket = ticketReader.readLine();
     }
-    return streetProfitability;
+      executor.awaitTermination(20, TimeUnit.SECONDS);
+    return streets;
       }
-    }
-        
-    private static String extractStreetName(String address) {
-    	String street = number.matcher(address).replaceFirst("");
-    	String streetName = direction.matcher(street).replaceFirst("");
-    	String finalName = suffix.matcher(streetName).replaceFirst("");
-    	return finalName;
+      
+      
     }
     
     public static void main(String... args) throws Exception {
@@ -50,13 +67,11 @@ public class ParkingTicketsStats {
 	    System.out.println("ST CLAIR : " + hackmap.get("ST CLAIR"));
 	    System.out.println("KING : " + hackmap.get("KING"));
 	    System.out.println("BLANK : " + hackmap.get(""));
-	    System.out.println("NULL : " + hackmap.get(null));
 	    System.out.println("DURATION : " + duration);
 	    writer.write(key + ": " + hackmap.get(key));
 	    writer.write("ST CLAIR : " + hackmap.get("ST CLAIR"));
 	    writer.write("KING : " + hackmap.get("KING"));
 	    writer.write("BLANK : " + hackmap.get(""));
-	    writer.write("NULL : " + hackmap.get(null));
 	    writer.write("DURATION : " + duration + "\n---------\n");
 	  }
     }
