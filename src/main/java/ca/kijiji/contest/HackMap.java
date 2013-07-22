@@ -3,6 +3,7 @@ package ca.kijiji.contest;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
@@ -12,8 +13,8 @@ public class HackMap extends ConcurrentHashMap<String, Integer> implements Sorte
 	private Integer highestValue;
 	private String keyOfHighestValue;
 	
-	public HackMap() {
-		super();
+	public HackMap(int initialCapacity, float loadFactor, int concurrencyLevel) {
+		super(initialCapacity, loadFactor, concurrencyLevel);
 		highestValue = 0;
 	}
 	
