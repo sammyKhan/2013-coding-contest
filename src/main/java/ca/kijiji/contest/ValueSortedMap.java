@@ -15,15 +15,16 @@ import java.util.SortedMap;
 public class ValueSortedMap<K> extends ConcurrentHashMap<K,Integer> implements SortedMap<K, Integer> {
 	
 	/* 
-	 * Use the ConcurrentSkipListMap implementation to manage all the sorting
+	 * Use ConcurrentSkipListMap to handle the sorting
 	 */
 	private final ConcurrentSkipListMap<Integer,K> sortedByValue;
 	
 	/*
-	 * Constructs a ValueSorted map that sorts in descending order
+	 * Constructs a ValueSorted map sorted in descending order
 	 */
 	public ValueSortedMap(int initialCapacity, float loadFactor, int concurrencyLevel) {
 		super(initialCapacity, loadFactor, concurrencyLevel);
+		
 		Comparator<Integer> descending = new Comparator<Integer>() {
 
 			@Override
@@ -35,7 +36,7 @@ public class ValueSortedMap<K> extends ConcurrentHashMap<K,Integer> implements S
 	}
 	
 	/*
-	 * Adds the entry to the map, adding the value to the existing one if it already exists
+	 * Puts the entry in the map, adding the value to the existing one if it already exists
 	 */
 	public synchronized void add(K key, Integer value) {
 		Integer previousValue = get(key);

@@ -1,6 +1,5 @@
 package ca.kijiji.contest;
 
-import java.io.FileWriter;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -54,10 +53,10 @@ public class ParkingTicketsStats {
 	 * 
 	 * @param parkingTicketStream    parking ticket data in csv format
 	 * @return                       mapping of street name to amount ticketed, 
-	 *                                 with a reference to the most profitable street
+	 *                                 sorted in descending order of amount ticketed
 	 * @see                          ValueSortedMap
 	 */
-	public static ValueSortedMap<String> sortStreetsByProfitability(InputStream parkingTicketStream) throws Exception {	
+	public static SortedMap<String,Integer> sortStreetsByProfitability(InputStream parkingTicketStream) throws Exception {	
 
 		// the street to profitability mapping to return
 		final ValueSortedMap<String> streets = new ValueSortedMap<String>(20_000, 0.75f, NUM_THREADS);
@@ -85,31 +84,26 @@ public class ParkingTicketsStats {
 		}
 
 		// wrap the input stream in a BufferedReader
-		try (BufferedReader ticketReader = 
+		try (BufferedReader csvReader = 
 				new BufferedReader(new InputStreamReader(parkingTicketStream));) {
 			
 			//ignore the first line (containing the csv definitions)
-			String ticket = ticketReader.readLine();
-				   ticket = ticketReader.readLine();
+			String ticket = csvReader.readLine();
+				   ticket = csvReader.readLine();
 				   
 			//buffer to store the data to pass to executor  
-			ArrayList<String> lineBuffer = null;
+			ArrayList<String> lineBuffer = new ArrayList<String>(BUFFER_SIZE);
 			
 			while (ticket != null) {
-				
-				if (lineBuffer == null) {
-					lineBuffer = new ArrayList<String>(BUFFER_SIZE);
-				}
-				
 				lineBuffer.add(ticket);
 				
 				//when full, pass buffer to executor to process
 				if (lineBuffer.size() >= BUFFER_SIZE) {
 					executor.execute(new TicketParser(lineBuffer));
-					lineBuffer = null;
+					lineBuffer = new ArrayList<String>(BUFFER_SIZE);
 				}
 				
-				ticket = ticketReader.readLine();
+				ticket = csvReader.readLine();
 			}
 			
 			//process the last few lines that were stored in the buffer
@@ -120,27 +114,6 @@ public class ParkingTicketsStats {
 			executor.awaitTermination(20, TimeUnit.SECONDS);
 			
 			return streets;
-		}
-	}
-
-	public static void main(String... args) throws Exception {
-		try (InputStream ticketReader = new java.io.FileInputStream(args[0]);
-				FileWriter writer = new FileWriter(args[1], true);) {
-			long startTime = System.currentTimeMillis();
-			SortedMap<String, Integer> hackmap = sortStreetsByProfitability(ticketReader);
-			long duration = System.currentTimeMillis() - startTime;
-			String key = hackmap.firstKey();
-			System.out.println(key + ": " + hackmap.get(key));
-			System.out.println("ST CLAIR : " + hackmap.get("ST CLAIR"));
-			System.out.println("KING : " + hackmap.get("KING"));
-			System.out.println("BLANK : " + hackmap.get(""));
-			System.out.println("DURATION : " + duration);
-			System.out.println(hackmap.size());
-			writer.write(key + ": " + hackmap.get(key));
-			writer.write("ST CLAIR : " + hackmap.get("ST CLAIR"));
-			writer.write("KING : " + hackmap.get("KING"));
-			writer.write("BLANK : " + hackmap.get(""));
-			writer.write("DURATION : " + duration + "\n---------\n");
 		}
 	}
 }
